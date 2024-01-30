@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import fetchContributors from "./fetchContributors";
 
 function App() {
-  const perPage = 5;
+  const perPage = 10;
+  const queryKey = ["repoData", { per_page: perPage }];
 
-  const { isPending, error, data, isPaused } = useQuery({
-    queryKey: ["repoData", { perPage: perPage }],
+  const { isPaused, isPending, error, data } = useQuery({
+    queryKey,
     queryFn: () => fetchContributors(perPage),
   });
 
