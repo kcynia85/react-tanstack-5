@@ -1,19 +1,31 @@
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState } from "react";
+import {
+  useQuery,
+  useIsFetching,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import fetchContributors from "./fetchContributors";
 
 function App() {
-  const perPage = 10;
-  const queryKey = ["repoData", { per_page: perPage }];
+  const perPage = 5;
+  const [page, setPage] = useState(1);
+  const queryKey = ["repoData", { per_page: perPage, page }];
+  const isGlobalFetching = useIsFetching();
 
-  const { isPaused, isPending, error, data } = useQuery({
+  const { isPaused, isPending, error, data, isPlaceholderData } = useQuery({
     queryKey,
-    queryFn: () => fetchContributors(perPage),
+    queryFn: () => fetchContributors(perPage, page),
+    placeholderData: keepPreviousData,
   });
 
   if (data) {
     return (
       <>
+        <p>
+          Fetching: {isGlobalFetching ? "Aktualizuję obecny stan" : "Gotowe"}
+        </p>
+        <p>Current page: {page}</p>
+
         <table>
           <thead>
             <tr>
@@ -21,7 +33,12 @@ function App() {
               <th>Contributions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody
+            style={{
+              opacity: isPlaceholderData ? 0.5 : 1,
+              transition: "opacity 0.2s ease",
+            }}
+          >
             {data.map(({ login, contributions }) => (
               <tr key={login}>
                 <td>{login}</td>
@@ -30,6 +47,13 @@ function App() {
             ))}
           </tbody>
         </table>
+        <button
+          onClick={() => {
+            setPage((page) => page + 1);
+          }}
+        >
+          Next page
+        </button>
       </>
     );
   }
