@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   useQuery,
   useIsFetching,
   keepPreviousData,
+  useQueryClient,
 } from "@tanstack/react-query";
 import fetchContributors from "./fetchContributors";
 
@@ -11,12 +12,17 @@ function App() {
   const [page, setPage] = useState(1);
   const queryKey = ["repoData", { per_page: perPage, page }];
   const isGlobalFetching = useIsFetching();
+  const queryClient = useQueryClient();
 
   const { isPaused, isPending, error, data, isPlaceholderData } = useQuery({
     queryKey,
     queryFn: () => fetchContributors(perPage, page),
     placeholderData: keepPreviousData,
   });
+
+  useEffect(() => {
+    queryClient.prefetchQuery(queryKey);
+  }, [page]);
 
   if (data) {
     return (
