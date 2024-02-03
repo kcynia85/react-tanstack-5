@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   useQuery,
   useIsFetching,
@@ -11,6 +11,10 @@ function App() {
   const perPage = 5;
   const [page, setPage] = useState(1);
   const queryKey = ["repoData", { per_page: perPage, page }];
+  const prefetchsQuery = useMemo(
+    () => ["repoData", { per_page: perPage, page: page + 1 }],
+    [perPage, page]
+  );
   const isGlobalFetching = useIsFetching();
   const queryClient = useQueryClient();
 
@@ -21,8 +25,15 @@ function App() {
   });
 
   useEffect(() => {
-    queryClient.prefetchQuery(queryKey);
-  }, [page]);
+    const prefetchNextPage = async () => {
+      await queryClient.prefetchQuery({
+        queryKey: prefetchsQuery,
+        queryFn: () => fetchContributors(perPage, page + 1),
+      });
+    };
+
+    prefetchNextPage();
+  }, [queryClient, page, perPage, prefetchsQuery]);
 
   if (data) {
     return (
@@ -64,6 +75,7 @@ function App() {
     );
   }
 
+  // Handle errors and loading states
   if (isPaused)
     return "Brak dostępu do sieci. Sprawdź połączenie z internetem.";
 
