@@ -10,30 +10,31 @@ import fetchContributors from "./fetchContributors";
 function App() {
   const perPage = 5;
   const [page, setPage] = useState(1);
+  const queryClient = useQueryClient();
+  const isGlobalFetching = useIsFetching();
+
   const queryKey = ["repoData", { per_page: perPage, page }];
-  const prefetchsQuery = useMemo(
+  const prefetchKey = useMemo(
     () => ["repoData", { per_page: perPage, page: page + 1 }],
     [perPage, page]
   );
-  const isGlobalFetching = useIsFetching();
-  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const prefetchNextPage = async () => {
+      await queryClient.prefetchQuery({
+        queryKey: prefetchKey,
+        queryFn: () => fetchContributors(perPage, page + 1),
+      });
+    };
+
+    prefetchNextPage();
+  }, [queryClient, page, perPage, prefetchKey]);
 
   const { isPaused, isPending, error, data, isPlaceholderData } = useQuery({
     queryKey,
     queryFn: () => fetchContributors(perPage, page),
     placeholderData: keepPreviousData,
   });
-
-  useEffect(() => {
-    const prefetchNextPage = async () => {
-      await queryClient.prefetchQuery({
-        queryKey: prefetchsQuery,
-        queryFn: () => fetchContributors(perPage, page + 1),
-      });
-    };
-
-    prefetchNextPage();
-  }, [queryClient, page, perPage, prefetchsQuery]);
 
   if (data) {
     return (
